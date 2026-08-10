@@ -2,7 +2,7 @@
 
 A simple REST API built using **Go**, **Gin**, and **PostgreSQL** to perform CRUD (Create, Read, Update, Delete) operations on student records.
 
-This project was built as part of the One2N SRE Bootcamp to learn REST API development, database integration, API best practices, Docker, and the Twelve-Factor App methodology.
+This project was built as part of the One2N SRE Bootcamp to learn REST API development, database integration, API best practices, Docker, Docker Compose, GNU Make, and the Twelve-Factor App methodology.
 
 ---
 
@@ -24,6 +24,7 @@ This project was built as part of the One2N SRE Bootcamp to learn REST API devel
 * Docker Compose
 * PostgreSQL Docker volume
 * Semantic versioned Docker images
+* One-command local development setup
 
 ---
 
@@ -36,8 +37,8 @@ This project was built as part of the One2N SRE Bootcamp to learn REST API devel
 * go-sqlmock
 * Docker
 * Docker Compose
-* Postman
 * Make
+* Postman
 
 ---
 
@@ -77,25 +78,23 @@ This project was built as part of the One2N SRE Bootcamp to learn REST API devel
 
 ---
 
-## Prerequisites
+# Prerequisites
 
-Before running the application, ensure the following are installed:
+The following tools must already be installed:
 
 * Go 1.25.7 or later
 * Docker
 * Docker Compose
+* GNU Make
 * golang-migrate CLI
-* Make
 
-PostgreSQL can either run locally or through Docker Compose.
+PostgreSQL **does not need to be installed locally** because PostgreSQL runs as a Docker container.
 
 ---
 
-# Local Development
+# Environment Variables
 
-## Environment Variables
-
-Create a `.env` file in the project root.
+For local development, create a `.env` file in the project root:
 
 ```env
 PORT=8080
@@ -108,13 +107,13 @@ DB_NAME=studentdb
 DB_SSLMODE=disable
 ```
 
-The application reads configuration from environment variables.
+The application reads its configuration from environment variables.
 
 The `.env` file is used for local development and is not copied into the Docker image.
 
 ---
 
-## Install Dependencies
+# Install Go Dependencies
 
 ```bash
 go mod tidy
@@ -122,36 +121,124 @@ go mod tidy
 
 ---
 
-## Running PostgreSQL with Docker
+# Step 3: One-Click Local Development Setup
 
-If PostgreSQL is not installed locally, it can be started using Docker:
+The goal of this milestone is to allow a developer to start the complete application with minimal steps.
 
-```bash
-docker run --name postgres \
--e POSTGRES_USER=postgres \
--e POSTGRES_PASSWORD=postgres \
--e POSTGRES_DB=studentdb \
--p 5432:5432 \
--d postgres
+The application consists of:
+
+```text
+                 Docker Compose
+                      │
+             ┌────────┴────────┐
+             │                 │
+             ▼                 ▼
+        student-api         postgres
+        container           container
+          :8080                :5432
+             │                 │
+             └──── Docker ─────┘
+                  network
 ```
 
-Check that PostgreSQL is running:
+PostgreSQL data is persisted using a Docker named volume:
+
+```text
+postgres_data
+```
+
+---
+
+# Start the Complete Environment
+
+The recommended command is:
 
 ```bash
-docker ps
+make setup
 ```
+
+This performs the required steps in order:
+
+```text
+make setup
+    │
+    ├── Start PostgreSQL
+    │
+    ├── Wait for PostgreSQL to become ready
+    │
+    ├── Run database migrations
+    │
+    ├── Build REST API Docker image
+    │
+    └── Start REST API container
+```
+
+The individual Make targets can also be executed separately.
+
+---
+
+# Makefile Targets
+
+## Start PostgreSQL
+
+```bash
+make db
+```
+
+This starts only the PostgreSQL service using Docker Compose:
+
+```bash
+docker compose up -d postgres
+```
+
+PostgreSQL is exposed on:
+
+```text
+localhost:5432
+```
+
+---
+
+## Wait for PostgreSQL
+
+```bash
+make wait-for-db
+```
+
+This checks whether PostgreSQL is ready to accept connections before migrations are executed.
+
+This prevents the following race condition:
+
+```text
+PostgreSQL container started
+        ↓
+PostgreSQL still initializing
+        ↓
+Migration starts too early
+        ↓
+Connection refused
+```
+
+The readiness check waits until PostgreSQL reports that it is ready.
 
 ---
 
 ## Run Database Migrations
 
-Apply migrations:
-
 ```bash
 make migrate-up
 ```
 
-Rollback one migration:
+This applies the database migrations:
+
+```bash
+migrate \
+    -path migrations \
+    -database "postgres://postgres:postgres@localhost:5432/studentdb?sslmode=disable" \
+    up
+```
+
+To roll back one migration:
 
 ```bash
 make migrate-down
@@ -159,13 +246,37 @@ make migrate-down
 
 ---
 
-## Run the Application
+## Build REST API Docker Image
 
 ```bash
-make run
+make docker-build
 ```
 
-The server starts on:
+This builds the Docker image using the multi-stage Dockerfile.
+
+The image is tagged using Semantic Versioning:
+
+```text
+student-api:1.0.1
+```
+
+The project intentionally avoids using the `latest` tag.
+
+---
+
+## Run REST API Container
+
+```bash
+make run-api
+```
+
+This starts the API using Docker Compose:
+
+```bash
+docker compose up -d student-api
+```
+
+The API is exposed on:
 
 ```text
 http://localhost:8080
@@ -173,15 +284,249 @@ http://localhost:8080
 
 ---
 
-## Run Tests
+# Complete Setup Flow
 
-Execute all unit tests:
+The complete setup can be performed with:
+
+```bash
+make setup
+```
+
+Internally, this performs:
+
+```text
+make db
+    ↓
+PostgreSQL container
+    ↓
+make wait-for-db
+    ↓
+PostgreSQL ready
+    ↓
+make migrate-up
+    ↓
+students table created
+    ↓
+make docker-build
+    ↓
+student-api:1.0.1
+    ↓
+make run-api
+    ↓
+REST API running
+```
+
+This is the main objective of Step 3.
+
+---
+
+# Docker Compose
+
+The Docker Compose configuration manages two services:
+
+```text
+postgres
+student-api
+```
+
+The API connects to PostgreSQL using:
+
+```env
+DB_HOST=postgres
+```
+
+The value `postgres` is the Docker Compose service name.
+
+Inside the Docker Compose network:
+
+```text
+student-api
+      │
+      │ postgres:5432
+      ▼
+postgres
+```
+
+The API should therefore **not** use:
+
+```env
+DB_HOST=localhost
+```
+
+when running inside Docker.
+
+For local execution using `go run`, `localhost` is used because the Go process runs directly on the host.
+
+---
+
+# PostgreSQL Persistence
+
+PostgreSQL uses a named Docker volume:
+
+```yaml
+volumes:
+  - postgres_data:/var/lib/postgresql/data
+```
+
+This means that removing the PostgreSQL container does not automatically remove the database data.
+
+To stop the environment:
+
+```bash
+make docker-compose-down
+```
+
+To stop the environment and remove the PostgreSQL volume:
+
+```bash
+docker compose down -v
+```
+
+**Warning:** removing the volume deletes the PostgreSQL data.
+
+---
+
+# Docker Compose Commands
+
+Start the complete Compose environment manually:
+
+```bash
+make docker-compose-up
+```
+
+Stop the Compose environment:
+
+```bash
+make docker-compose-down
+```
+
+For normal development, prefer:
+
+```bash
+make setup
+```
+
+because it also performs the database startup, readiness check, migration, image build, and API startup sequence.
+
+---
+
+# Docker
+
+The application uses a multi-stage Dockerfile.
+
+```text
+Stage 1: Builder
+        │
+        ├── Go compiler
+        ├── Dependencies
+        └── Application source
+                 │
+                 ▼
+           Go application binary
+                 │
+                 ▼
+Stage 2: Runtime
+        │
+        ├── Small runtime image
+        └── Application binary
+```
+
+The Go compiler and build dependencies are not included in the final runtime image.
+
+This reduces the final image size.
+
+---
+
+# Docker Image Versioning
+
+Images use Semantic Versioning:
+
+```text
+MAJOR.MINOR.PATCH
+```
+
+Examples:
+
+```text
+1.0.0
+1.0.1
+1.1.0
+2.0.0
+```
+
+Current image:
+
+```text
+student-api:1.0.1
+```
+
+The `latest` tag is intentionally avoided so that the exact application version is known.
+
+---
+
+# Docker Image Optimization
+
+The project uses several measures to reduce the Docker image footprint:
+
+### Multi-stage build
+
+The Go compiler and build dependencies are kept in the builder stage and are not included in the runtime image.
+
+### Alpine runtime image
+
+A lightweight Alpine-based image is used for the runtime stage.
+
+### `.dockerignore`
+
+Unnecessary files are excluded from the Docker build context.
+
+For example:
+
+```text
+.git
+.env
+.gitignore
+README.md
+*.md
+tmp/
+bin/
+```
+
+The `.env` file is particularly important because application secrets and local configuration should not be baked into the Docker image.
+
+---
+
+# Local Go Development
+
+The API can also be run directly without Docker:
+
+```bash
+make run
+```
+
+This executes:
+
+```bash
+go run ./cmd/server/main.go
+```
+
+For this mode, PostgreSQL must already be reachable on:
+
+```text
+localhost:5432
+```
+
+---
+
+# Testing
+
+Run all unit tests:
 
 ```bash
 make test
 ```
 
-The tests use `go-sqlmock`, so the handler tests do not require a running PostgreSQL instance.
+The tests use `go-sqlmock`, so handler tests do not require a running PostgreSQL instance.
 
 ---
 
@@ -198,15 +543,33 @@ The tests use `go-sqlmock`, so the handler tests do not require a running Postgr
 
 ---
 
-## Example Request
+# Healthcheck
 
-### Create Student
+Test the application:
+
+```bash
+curl http://localhost:8080/healthcheck
+```
+
+Expected response:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+---
+
+# Example API Request
+
+## Create Student
 
 ```http
 POST /api/v1/students
 ```
 
-Request body:
+Request:
 
 ```json
 {
@@ -229,307 +592,85 @@ Response:
 
 ---
 
-# Docker
+# Development Workflow
 
-The application uses a **multi-stage Dockerfile**.
-
-The Dockerfile contains two stages:
-
-```text
-Stage 1: Builder
-        ↓
-Go compiler + dependencies
-        ↓
-Compile application
-        ↓
-student-api binary
-
-Stage 2: Runtime
-        ↓
-Small Alpine image
-        ↓
-student-api binary
-```
-
-The Go compiler and build dependencies are not included in the final runtime image.
-
-This helps reduce the final Docker image size.
-
----
-
-## Build Docker Image
-
-The current image version is:
-
-```text
-student-api:1.0.1
-```
-
-Build the image using:
+For the complete Docker-based development environment:
 
 ```bash
-make docker-build
+make setup
 ```
 
-This is equivalent to:
-
-```bash
-docker build -t student-api:1.0.1 .
-```
-
-The project intentionally uses a semantic version instead of the `latest` tag.
-
----
-
-## Run Docker Image
-
-Environment variables are injected into the container at runtime.
-
-Run:
-
-```bash
-make docker-run
-```
-
-This executes:
-
-```bash
-docker run --env-file .env \
-	--name student-api \
-	-p 8080:8080 \
-	student-api:1.0.1
-```
-
-The `.env` file is read by Docker on the host.
-
-It is **not copied into the Docker image**.
-
-The application therefore receives configuration through runtime environment variables.
-
----
-
-# Docker Compose
-
-Docker Compose runs the application and PostgreSQL together.
-
-Start the complete environment:
-
-```bash
-make docker-compose-up
-```
-
-This creates:
-
-```text
-                  Docker Compose
-                       │
-             ┌─────────┴─────────┐
-             │                   │
-             ▼                   ▼
-       student-api           postgres
-       container             container
-          :8080                 :5432
-             │                   │
-             └──── Docker ───────┘
-                  network
-                       │
-                       ▼
-                postgres_data
-                   volume
-```
-
-The API connects to PostgreSQL using:
-
-```env
-DB_HOST=postgres
-```
-
-`postgres` is the PostgreSQL service name defined in Docker Compose.
-
-Inside the Docker network, Docker's internal DNS resolves `postgres` to the PostgreSQL container.
-
-This is different from local development, where:
-
-```env
-DB_HOST=localhost
-```
-
-is used.
-
----
-
-## Stop Docker Compose
-
-```bash
-make docker-compose-down
-```
-
-This stops and removes the containers.
-
-The PostgreSQL volume remains.
-
-To remove the PostgreSQL volume as well:
-
-```bash
-docker compose down -v
-```
-
-**Warning:** removing the volume deletes the PostgreSQL data stored in it.
-
----
-
-# Makefile Commands
-
-| Command                    | Purpose                   |
-| -------------------------- | ------------------------- |
-| `make run`                 | Run the API locally       |
-| `make test`                | Run all unit tests        |
-| `make build`               | Build the Go binary       |
-| `make migrate-up`          | Apply database migrations |
-| `make migrate-down`        | Roll back one migration   |
-| `make docker-build`        | Build the Docker image    |
-| `make docker-run`          | Run the Docker image      |
-| `make docker-compose-up`   | Start API and PostgreSQL  |
-| `make docker-compose-down` | Stop API and PostgreSQL   |
-
----
-
-# Docker Image Versioning
-
-Docker images use Semantic Versioning:
-
-```text
-MAJOR.MINOR.PATCH
-```
-
-Examples:
-
-```text
-1.0.0
-1.0.1
-1.1.0
-2.0.0
-```
-
-The current image is:
-
-```text
-student-api:1.0.1
-```
-
-The `latest` tag is intentionally avoided so that the exact application version being deployed is known.
-
----
-
-# Docker Image Optimization
-
-The project uses several measures to reduce the Docker image footprint:
-
-### Multi-stage build
-
-The Go compiler and build dependencies are kept in the builder stage and are not included in the runtime image.
-
-### Alpine runtime image
-
-The runtime uses a lightweight Alpine-based image.
-
-### `.dockerignore`
-
-The following files and directories are excluded from the Docker build context:
-
-```text
-.git
-.env
-.gitignore
-README.md
-*.md
-tmp/
-bin/
-```
-
-This prevents unnecessary files and sensitive configuration from being sent to Docker during the build.
-
----
-
-# Healthcheck
-
-The application provides:
-
-```text
-GET /healthcheck
-```
-
-Test it with:
-
-```bash
-curl http://localhost:8080/healthcheck
-```
-
-Expected response:
-
-```json
-{
-  "status": "ok"
-}
-```
-
----
-
-# Testing
-
-The project includes unit tests for the API handlers using `go-sqlmock`.
-
-This allows database interactions to be tested without requiring a running PostgreSQL instance.
-
-Run:
-
-```bash
-go test ./...
-```
-
-or:
+Run tests:
 
 ```bash
 make test
 ```
 
----
-
-# Development Workflow
-
-### Local development
+Stop the environment:
 
 ```bash
-make migrate-up
+make docker-compose-down
+```
+
+For local Go development:
+
+```bash
 make run
 ```
 
-### Run tests
+---
 
-```bash
-make test
+# Step 3 Completion Checklist
+
+The Step 3 requirements are covered as follows:
+
+| Requirement                                   | Implementation         |
+| --------------------------------------------- | ---------------------- |
+| API + dependent services using Docker Compose | `docker-compose.yml`   |
+| Start DB container                            | `make db`              |
+| Run DB migrations                             | `make migrate-up`      |
+| Build REST API image                          | `make docker-build`    |
+| Run REST API container                        | `make run-api`         |
+| DB readiness check                            | `make wait-for-db`     |
+| Complete startup workflow                     | `make setup`           |
+| Makefile                                      | `Makefile`             |
+| Docker Compose instructions                   | This README            |
+| Make target execution order                   | `make setup` section   |
+| Persistent PostgreSQL data                    | `postgres_data` volume |
+| Semantic image version                        | `student-api:1.0.1`    |
+
+---
+
+## Step 3 Architecture
+
+The final local development workflow is:
+
+```text
+                    make setup
+                        │
+                        ▼
+                 Docker Compose
+                        │
+             ┌──────────┴──────────┐
+             │                     │
+             ▼                     │
+          PostgreSQL               │
+             │                     │
+       healthcheck                 │
+             │                     │
+             ▼                     │
+         migrations                │
+             │                     │
+             └──────────┐          │
+                        ▼          │
+                 Docker build      │
+                        │          │
+                        ▼          │
+                student-api:1.0.1 │
+                        │          │
+                        ▼          ▼
+                   student-api ↔ postgres
+                       :8080       :5432
 ```
 
-### Build Docker image
-
-```bash
-make docker-build
-```
-
-### Run Docker image
-
-```bash
-make docker-run
-```
-
-### Run complete Docker environment
-
-```bash
-make docker-compose-up
-```
-
-### Stop Docker environment
-
-```bash
-make docker-compose-down
-```
+This completes the main **Docker Compose + GNU Make one-click development setup** requirements for Step 3.
