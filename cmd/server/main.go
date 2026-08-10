@@ -15,7 +15,7 @@ func main() {
 	log.Println("Loading environment variables...")
 
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println(".env file not found, using system environment variables")
 	}
 
 	log.Println("Environment variables loaded")
@@ -25,11 +25,12 @@ func main() {
 	// Connect to PostgreSQL
 	database, err := db.Connect()
 
-	log.Println("Connected to PostgreSQL")
-
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	log.Println("Connected to PostgreSQL")
+
 	defer database.Close()
 
 	router := gin.Default()
