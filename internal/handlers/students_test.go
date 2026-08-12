@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"bytes"
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/gin-gonic/gin"
 )
 
 func setupRouter(handler *StudentHandler) *gin.Engine {
@@ -29,7 +30,10 @@ func TestCreateStudent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating sqlmock: %v", err)
 	}
-	defer db.Close()
+
+	defer func() {
+		_ = db.Close()
+	}()
 
 	handler := NewStudentHandler(db)
 	router := setupRouter(handler)
@@ -76,7 +80,9 @@ func TestCreateStudent(t *testing.T) {
 func TestGetStudent(t *testing.T) {
 
 	db, mock, _ := sqlmock.New()
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 
 	handler := NewStudentHandler(db)
 	router := setupRouter(handler)
@@ -120,7 +126,10 @@ func TestGetStudent(t *testing.T) {
 func TestGetStudents(t *testing.T) {
 
 	db, mock, _ := sqlmock.New()
-	defer db.Close()
+
+	defer func() {
+		_ = db.Close()
+	}()
 
 	handler := NewStudentHandler(db)
 	router := setupRouter(handler)
@@ -159,7 +168,10 @@ func TestGetStudents(t *testing.T) {
 func TestUpdateStudent(t *testing.T) {
 
 	db, mock, _ := sqlmock.New()
-	defer db.Close()
+
+	defer func() {
+		_ = db.Close()
+	}()
 
 	handler := NewStudentHandler(db)
 	router := setupRouter(handler)
@@ -201,7 +213,10 @@ func TestUpdateStudent(t *testing.T) {
 func TestDeleteStudent(t *testing.T) {
 
 	db, mock, _ := sqlmock.New()
-	defer db.Close()
+
+	defer func() {
+		_ = db.Close()
+	}()
 
 	handler := NewStudentHandler(db)
 	router := setupRouter(handler)

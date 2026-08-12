@@ -31,7 +31,11 @@ func main() {
 
 	log.Println("Connected to PostgreSQL")
 
-	defer database.Close()
+	defer func() {
+		if err := database.Close(); err != nil {
+			log.Printf("Error closing database: %v", err)
+		}
+	}()
 
 	router := gin.Default()
 

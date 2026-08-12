@@ -13,6 +13,9 @@ test:
 build:
 	go build -o bin/$(APP_NAME) ./cmd/server
 
+lint:
+	golangci-lint run
+
 migrate-up:
 	migrate \
 		-path migrations \

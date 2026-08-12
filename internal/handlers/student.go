@@ -70,7 +70,12 @@ func (h *StudentHandler) GetStudents(c *gin.Context) {
 		})
 		return
 	}
-	defer rows.Close()
+
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("Error closing rows: %v", err)
+		}
+	}()
 
 	var students []models.Student
 
