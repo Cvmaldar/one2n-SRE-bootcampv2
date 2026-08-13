@@ -21,3 +21,6 @@ build/
 
 # GitHub Actions self-hosted runner
 actions-runner/
+
+#vagrant
+.vagrant/

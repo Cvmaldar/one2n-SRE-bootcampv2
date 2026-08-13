@@ -1,7 +1,1 @@
-.git
-.gitignore
-.env
-README.md
-*.md
-tmp/
-bin/
+.git .gitignore .env README.md *.md tmp/ bin/ actions-runner/

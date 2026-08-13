@@ -1,0 +1,34 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+    # Base box
+    config.vm.box = "utm/debian11"
+  
+    # VM hostname
+    config.vm.hostname = "students-api-vm"
+  
+    # Port forwarding
+    config.vm.network "forwarded_port",
+      guest: 8080,
+      host: 8080
+
+
+    # UTM Provider Configuration
+    config.vm.provider "utm" do |u|
+      u.name = "students-api-vm"
+  
+      # VM Resources
+      u.memory = "4096"
+      u.cpus = 4
+  
+      # Shared directory mode
+      u.directory_share_mode = "virtFS"
+    end
+  
+    # Provisioning Script
+    config.vm.provision "shell",
+      path: "provision.sh"
+  
+  end
