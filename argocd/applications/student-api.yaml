@@ -7,7 +7,7 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/Cvmaldar/one2n-SRE-bootcamp.git
+    repoURL: https://github.com/Cvmaldar/one2n-SRE-bootcampv2.git
     targetRevision: main
     path: helm/student-api
 
