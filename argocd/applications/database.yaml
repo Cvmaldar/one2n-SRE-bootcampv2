@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: database
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/Cvmaldar/one2n-SRE-bootcamp.git
+    targetRevision: main
+    path: helm/database
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: student-api
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

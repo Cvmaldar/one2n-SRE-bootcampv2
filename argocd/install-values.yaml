@@ -1,0 +1,27 @@
+controller:
+  nodeSelector:
+    type: dependent_services
+
+server:
+  nodeSelector:
+    type: dependent_services
+
+repoServer:
+  nodeSelector:
+    type: dependent_services
+
+redis:
+  nodeSelector:
+    type: dependent_services
+
+applicationSet:
+  nodeSelector:
+    type: dependent_services
+
+dex:
+  nodeSelector:
+    type: dependent_services
+
+notifications:
+  nodeSelector:
+    type: dependent_services

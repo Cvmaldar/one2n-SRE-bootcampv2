@@ -1,0 +1,17 @@
+vault:
+  server: "http://vault-service.vault.svc:8200"
+  path: "secret"
+  version: "v2"
+
+  auth:
+    secretName: vault-token
+    secretNamespace: external-secrets-system
+    secretKey: token
+
+externalSecret:
+  name: student-api-db-secret
+  namespace: student-api
+
+  refreshInterval: 1m
+
+  remoteKey: secret/data/student-api

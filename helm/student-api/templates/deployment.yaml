@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: student-api
+  namespace: student-api
+spec:
+  replicas: {{ .Values.replicaCount }}
+
+  selector:
+    matchLabels:
+      app: student-api
+
+  template:
+    metadata:
+      labels:
+        app: student-api
+
+    spec:
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+
+      initContainers:
+        - name: db-migration
+          image: "{{ .Values.migration.image.repository }}:{{ .Values.migration.image.tag }}"
+
+          command:
+            - migrate
+            - -path
+            - /migrations
+            - -database
+            - postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)
+            - up
+
+          envFrom:
+            - configMapRef:
+                name: student-api-config
+
+            - secretRef:
+                name: student-api-db-secret
+
+      containers:
+        - name: student-api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          ports:
+            - containerPort: 8080
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+          envFrom:
+            - configMapRef:
+                name: student-api-config
+
+            - secretRef:
+                name: student-api-db-secret

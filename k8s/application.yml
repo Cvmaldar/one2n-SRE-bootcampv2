@@ -53,7 +53,7 @@ spec:
       containers:
       - name: student-api
         image: cvmaldar234/student-api:1.0.1
-
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
 

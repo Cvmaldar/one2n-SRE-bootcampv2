@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: student-api-db
+  namespace: student-api
+
+spec:
+  type: {{ .Values.service.type }}
+
+  selector:
+    app: student-api-db
+
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
