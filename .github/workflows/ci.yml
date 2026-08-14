@@ -50,8 +50,7 @@ jobs:
 
     - name: Update Helm image tag
       run: |
-        sed -i -E '/^image:/,/^service:/ s/^(  tag:).*/\1 "'${IMAGE_TAG}'"/' \
-          helm/student-api/values.yaml
+        sed -i '' -E 's/^(  tag:).*/\1 "'"${IMAGE_TAG}"'"/' helm/student-api/values.yaml
 
     - name: Verify Helm values
       run: |
