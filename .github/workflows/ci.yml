@@ -9,12 +9,16 @@ on:
     - 'go.sum'
     - 'Dockerfile'
     - 'Makefile'
+
   workflow_dispatch:
 
 
 jobs:
   ci:
     runs-on: self-hosted
+
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout code
@@ -42,13 +46,13 @@ jobs:
       run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/student-api:${{ env.IMAGE_TAG }} .
 
     - name: Push Docker Image
-      run: docker push  ${{ secrets.DOCKERHUB_USERNAME }}/student-api:${{ env.IMAGE_TAG }}
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/student-api:${{ env.IMAGE_TAG }}
 
     - name: Update Helm image tag
-      run: |+
+      run: |
         sed -i -E '/^image:/,/^service:/ s/^(  tag:).*/\1 "'${IMAGE_TAG}'"/' \
           helm/student-api/values.yaml
-          
+
     - name: Verify Helm values
       run: |
         grep -A3 '^image:' helm/student-api/values.yaml
