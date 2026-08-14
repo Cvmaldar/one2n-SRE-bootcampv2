@@ -1,3 +1,4 @@
+// code related to connecting to the PostgreSQL database
 package db
 
 import (
