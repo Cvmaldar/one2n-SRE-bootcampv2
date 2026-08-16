@@ -1,8 +1,5 @@
 # helm/observability/postgres-exporter/values.yaml
 
-image:
-  repository: quay.io/prometheuscommunity/postgres-exporter
-  tag: v0.20.1
 config:
   datasource:
     host: student-api-db.student-api.svc.cluster.local
