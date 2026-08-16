@@ -15,7 +15,7 @@ spec:
       valueFiles:
       - $values/helm/observability/loki/values.yaml
 
-  - repoURL: <YOUR_GITHUB_REPO_URL>
+  - repoURL: https://github.com/Cvmaldar/one2n-SRE-bootcampv2.git
     targetRevision: main
     ref: values
 
