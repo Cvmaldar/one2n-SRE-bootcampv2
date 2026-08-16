@@ -1,0 +1,25 @@
+nodeSelector:
+  type: dependent_services
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+
+  limits:
+    memory: 64Mi
+
+config:
+  modules:
+    http_2xx:
+      prober: http
+      timeout: 5s
+      http:
+        preferred_ip_protocol: ip4
+        tls_config:
+          insecure_skip_verify: true
+
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack

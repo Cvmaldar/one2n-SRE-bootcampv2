@@ -1,0 +1,58 @@
+prometheusOperator:
+  nodeSelector:
+    type: dependent_services
+
+prometheus:
+  prometheusSpec:
+    nodeSelector:
+      type: dependent_services
+
+    retention: 1d
+
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+
+alertmanager:
+  alertmanagerSpec:
+    nodeSelector:
+      type: dependent_services
+
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
+
+grafana:
+  adminPassword: admin
+
+  nodeSelector:
+    type: dependent_services
+
+  grafana.ini:
+    auth.anonymous:
+      enabled: true
+      org_role: Viewer
+
+  additionalDataSources:
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki.observability.svc.cluster.local:3100
+
+kube-state-metrics:
+  nodeSelector:
+    type: dependent_services
+
+nodeExporter:
+  enabled: true

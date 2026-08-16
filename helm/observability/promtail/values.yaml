@@ -1,0 +1,23 @@
+daemonset:
+  enabled: true
+
+deployment:
+  enabled: false
+
+config:
+  clients:
+  - url: http://loki.observability.svc.cluster.local:3100/loki/api/v1/push
+
+  snippets:
+    extraRelabelConfigs:
+    # Only discover pods from the application namespace
+    - source_labels:
+      - __meta_kubernetes_namespace
+      regex: student-api
+      action: keep
+
+    # Only forward Student API pods, not the database pod
+    - source_labels:
+      - __meta_kubernetes_pod_label_app
+      regex: student-api
+      action: keep

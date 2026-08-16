@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: internal-services
+  namespace: observability
+spec:
+  jobName: blackbox-internal-services
+
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.observability.svc:9115
+
+  module: http_2xx
+
+  targets:
+    staticConfig:
+      static:
+      - https://argocd-server.argocd.svc.cluster.local/
+      - http://vault-service.vault.svc.cluster.local:8200/v1/sys/health
+      - http://student-api.student-api.svc.cluster.local:8080/healthcheck

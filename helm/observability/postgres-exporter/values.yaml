@@ -1,0 +1,34 @@
+# helm/observability/postgres-exporter/values.yaml
+
+config:
+  datasource:
+    host: student-api-db.student-api.svc.cluster.local
+
+    userSecret:
+      name: postgres-exporter-db-secret
+      key: DB_USERNAME
+
+    passwordSecret:
+      name: postgres-exporter-db-secret
+      key: DB_PASSWORD
+
+    port: "5432"
+    database: student_api
+    sslmode: disable
+
+serviceMonitor:
+  enabled: true
+  apiVersion: monitoring.coreos.com/v1
+  namespace: observability
+  interval: 30s
+  timeout: 10s
+
+nodeSelector:
+  type: dependent_services
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
