@@ -1,0 +1,27 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: postgres-exporter-db-secret
+  namespace: observability
+spec:
+  refreshInterval: 1m
+
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-backend
+
+  target:
+    name: postgres-exporter-db-secret
+    creationPolicy: Owner
+    deletionPolicy: Retain
+
+  data:
+  - secretKey: DB_USERNAME
+    remoteRef:
+      key: secret/data/student-api
+      property: DB_USERNAME
+
+  - secretKey: DB_PASSWORD
+    remoteRef:
+      key: secret/data/student-api
+      property: DB_PASSWORD
