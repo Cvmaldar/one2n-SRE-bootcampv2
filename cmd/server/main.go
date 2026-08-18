@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"sre.com/internal/db"
 	"sre.com/internal/handlers"
 )
@@ -38,6 +39,8 @@ func main() {
 	}()
 
 	router := gin.Default()
+
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	router.GET("/healthcheck", func(c *gin.Context) {
 		c.JSON(200, gin.H{
