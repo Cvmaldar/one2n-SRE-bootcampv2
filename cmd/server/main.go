@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"sre.com/internal/db"
 	"sre.com/internal/handlers"
+	"sre.com/internal/middleware"
 )
 
 func main() {
@@ -39,6 +40,8 @@ func main() {
 	}()
 
 	router := gin.Default()
+
+	router.Use(middleware.MetricsMiddleware())
 
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
