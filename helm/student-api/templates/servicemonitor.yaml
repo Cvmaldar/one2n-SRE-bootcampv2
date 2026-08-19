@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: student-api
+  namespace: observability
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - student-api
+
+  selector:
+    matchLabels:
+      app: student-api
+
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
