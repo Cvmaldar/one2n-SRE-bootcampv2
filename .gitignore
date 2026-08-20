@@ -25,4 +25,4 @@ actions-runner/
 #vagrant
 .vagrant/
 
-/argocd/repo-secrets.yaml
+/argocd/repo-secret.yaml
